@@ -1,51 +1,27 @@
+#include "include/decode.hpp"
 #include <cstdint>
 #include <cstdio>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <zlib.h>
 
-struct PNGChunk {
-  std::string type;
-  std::vector<uint8_t> data;
-};
-
-struct PNGImage {
-  uint32_t width = 0;
-  uint32_t height = 0;
-  uint8_t bitDepth = 0;
-  uint8_t colorType = 0;
-  std::vector<uint8_t> pixels; // raw RGBA after decoding
-};
-
-class PNGParser {
-public:
-  explicit PNGParser(const std::string &filename);
-
-  // Parse all chunks
-  void parseChunks();
-
-  // Decompress IDAT chunks to raw bytes
-  std::vector<uint8_t> decompressIDAT();
-
-  // Optionally: reconstruct pixels from decompressed scanlines
-  void reconstructPixels();
-
-  // Get parsed image info
-  PNGImage getImage() const { return image; }
-
-  void dumpChunks();
-
-private:
-  std::ifstream file;
-  std::vector<PNGChunk> chunks;
-  PNGImage image;
-
-  void readSignature();
-  uint32_t readUint32();
-  void readChunk();
-};
+void PNGParser::dumpHex() {
+  int n = this->image.pixels.size();
+  for (int i = 0; i < n; i += 4) {
+    if (i + 4 < n) {
+      for (int j = i; j < i + 4; j++) {
+        printf("%04X ", this->image.pixels[j]);
+      }
+      printf("\n");
+    } else {
+      for (int j = i; j < n; j++) {
+        printf("%04X ", this->image.pixels[j]);
+      }
+      printf("\n");
+    }
+  }
+}
 
 PNGParser::PNGParser(const std::string &filename)
     : file(filename, std::ios::binary) {
@@ -286,16 +262,17 @@ void writePNG(const std::string &filename, const PNGImage &img) {
   fclose(f);
 }
 
-int main() {
-  PNGParser png("image.png");
-  png.parseChunks();
-  png.reconstructPixels();
-  PNGImage image = png.getImage();
-  printf("Width = %d\nHeight = %d\nBitDepth = %d\ncolorType = %d\n",
-         image.width, image.height, image.bitDepth, image.colorType);
-
-  printf("Raw pixel data size = %zu bytes\n", image.pixels.size());
-  png.dumpChunks();
-  writePNG("output.png", image);
-  return 0;
-}
+// int main() {
+//   PNGParser png("images/image.png");
+//   png.parseChunks();
+//   png.reconstructPixels();
+//   PNGImage image = png.getImage();
+//   printf("Width = %d\nHeight = %d\nBitDepth = %d\ncolorType = %d\n",
+//          image.width, image.height, image.bitDepth, image.colorType);
+//
+//   printf("Raw pixel data size = %zu bytes\n", image.pixels.size());
+//   png.dumpChunks();
+//   // png.dumpHex();
+//   writePNG("images/output.png", image);
+//   return 0;
+// }
